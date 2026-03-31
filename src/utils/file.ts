@@ -107,6 +107,23 @@ export function isInDirectory(
   return fullPath.startsWith(fullCwd)
 }
 
+export function isPathInsideDirectory(
+  baseDir: string,
+  targetPath: string,
+): boolean {
+  if (baseDir.includes('\0') || targetPath.includes('\0')) {
+    return false
+  }
+
+  const resolvedBaseDir = resolve(baseDir)
+  const resolvedTargetPath = resolve(targetPath)
+
+  return (
+    resolvedTargetPath === resolvedBaseDir ||
+    resolvedTargetPath.startsWith(`${resolvedBaseDir}${sep}`)
+  )
+}
+
 export function readTextContent(
   filePath: string,
   offset = 0,

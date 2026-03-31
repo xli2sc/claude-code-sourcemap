@@ -1,11 +1,12 @@
 import { existsSync, lstatSync, mkdirSync, readdirSync, readFileSync } from 'fs'
 import { Box, Text } from 'ink'
-import { join } from 'path'
+import { join, resolve } from 'path'
 import * as React from 'react'
 import { z } from 'zod'
 import { FallbackToolUseRejectedMessage } from '../../components/FallbackToolUseRejectedMessage.js'
 import { Tool } from '../../Tool.js'
 import { MEMORY_DIR } from '../../utils/env.js'
+import { isPathInsideDirectory } from '../../utils/file.js'
 import { DESCRIPTION, PROMPT } from './prompt.js'
 
 const inputSchema = z.strictObject({
@@ -61,12 +62,15 @@ export const MemoryReadTool = {
   },
   async validateInput({ file_path }) {
     if (file_path) {
-      const fullPath = join(MEMORY_DIR, file_path)
-      if (!fullPath.startsWith(MEMORY_DIR)) {
+      const fullPath = resolve(MEMORY_DIR, file_path)
+      if (!isPathInsideDirectory(MEMORY_DIR, fullPath)) {
         return { result: false, message: 'Invalid memory file path' }
       }
       if (!existsSync(fullPath)) {
         return { result: false, message: 'Memory file does not exist' }
+      }
+      if (lstatSync(fullPath).isDirectory()) {
+        return { result: false, message: 'Memory path must be a file' }
       }
     }
     return { result: true }
@@ -76,7 +80,7 @@ export const MemoryReadTool = {
 
     // If a specific file is requested, return its contents
     if (file_path) {
-      const fullPath = join(MEMORY_DIR, file_path)
+      const fullPath = resolve(MEMORY_DIR, file_path)
       if (!existsSync(fullPath)) {
         throw new Error('Memory file does not exist')
       }

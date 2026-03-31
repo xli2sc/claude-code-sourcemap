@@ -1,11 +1,12 @@
 import { mkdirSync, writeFileSync } from 'fs'
 import { Box, Text } from 'ink'
-import { dirname, join } from 'path'
+import { dirname, resolve } from 'path'
 import * as React from 'react'
 import { z } from 'zod'
 import { FallbackToolUseRejectedMessage } from '../../components/FallbackToolUseRejectedMessage.js'
 import { Tool } from '../../Tool.js'
 import { MEMORY_DIR } from '../../utils/env.js'
+import { isPathInsideDirectory } from '../../utils/file.js'
 import { DESCRIPTION, PROMPT } from './prompt.js'
 
 const inputSchema = z.strictObject({
@@ -57,14 +58,14 @@ export const MemoryWriteTool = {
     )
   },
   async validateInput({ file_path }) {
-    const fullPath = join(MEMORY_DIR, file_path)
-    if (!fullPath.startsWith(MEMORY_DIR)) {
+    const fullPath = resolve(MEMORY_DIR, file_path)
+    if (!isPathInsideDirectory(MEMORY_DIR, fullPath)) {
       return { result: false, message: 'Invalid memory file path' }
     }
     return { result: true }
   },
   async *call({ file_path, content }) {
-    const fullPath = join(MEMORY_DIR, file_path)
+    const fullPath = resolve(MEMORY_DIR, file_path)
     mkdirSync(dirname(fullPath), { recursive: true })
     writeFileSync(fullPath, content, 'utf-8')
     yield {
